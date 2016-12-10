@@ -32,7 +32,16 @@ const (
 var (
 	// ErrEmptyPayload is returned when the payload given to Sign is empty.
 	ErrEmptyPayload = errors.New("jwt: empty payload")
+	// ErrInvalidKeyType is returned when the type of given key is wrong.
+	ErrInvalidKeyType = errors.New("jwt: invalid key")
+
+	periodBytes = []byte(".")
+	algImpMap   map[Algorithm]algImp
 )
+
+type algImp interface {
+	sign(content []byte, key interface{}) ([]byte, error)
+}
 
 type header struct {
 	Algorithm Algorithm `json:"alg"`

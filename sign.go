@@ -20,7 +20,7 @@ type SignOption struct {
 }
 
 // Sign encodes the given payload and serect to the JSON web token.
-func Sign(payload map[string]interface{}, secretOrPrivateKey []byte, opt *SignOption) ([]byte, error) {
+func Sign(payload map[string]interface{}, secretOrPrivateKey interface{}, opt *SignOption) ([]byte, error) {
 	if payload == nil {
 		return nil, ErrEmptyPayload
 	}
@@ -36,7 +36,7 @@ func Sign(payload map[string]interface{}, secretOrPrivateKey []byte, opt *SignOp
 		}
 	}
 
-	headerJSON, err := json.Marshal(h)
+	hj, err := json.Marshal(h)
 
 	if err != nil {
 		return nil, err
@@ -53,17 +53,18 @@ func Sign(payload map[string]interface{}, secretOrPrivateKey []byte, opt *SignOp
 		return nil, err
 	}
 
-	payloadJSON, err := json.Marshal(payload)
+	pj, err := json.Marshal(payload)
 
 	if err != nil {
 		return nil, err
 	}
 
-	sig := genSig(headerJSON, payloadJSON, secretOrPrivateKey, opt.Algorithm)
+	sig, err := algImpMap[opt.Algorithm].
+		sign(bytes.Join([][]byte{hj, pj}, periodBytes), secretOrPrivateKey)
 
-	return bytes.Join([][]byte{headerJSON, payloadJSON, sig}, []byte(".")), nil
-}
+	if err != nil {
+		return nil, err
+	}
 
-func genSig(hj []byte, pj []byte, secretOrPrivateKey []byte, alg Algorithm) []byte {
-	return nil
+	return bytes.Join([][]byte{hj, pj, sig}, periodBytes), nil
 }
