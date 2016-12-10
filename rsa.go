@@ -27,3 +27,7 @@ func (ra rsaAlgImp) sign(content []byte, privateKey interface{}) ([]byte, error)
 
 	return rsa.SignPKCS1v15(rand.Reader, pk, ra.ch, ra.hh.Sum(content))
 }
+
+func (ra rsaAlgImp) verify(signing []byte, key interface{}) error {
+	return nil
+}

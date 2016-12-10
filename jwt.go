@@ -21,12 +21,6 @@ const (
 	RS384 Algorithm = "RS384"
 	// RS512 represents RSASSA using SHA-512 hash algorithm.
 	RS512 Algorithm = "RS512"
-	// ES256 represents ECDSA using P-256 curve and SHA-256 hash algorithm.
-	ES256 Algorithm = "ES256"
-	// ES384 represents ECDSA using P-384 curve and SHA-384 hash algorithm.
-	ES384 Algorithm = "ES384"
-	// ES512 represents ECDSA using P-512 curve and SHA-512 hash algorithm.
-	ES512 Algorithm = "ES512"
 )
 
 var (
@@ -34,13 +28,24 @@ var (
 	ErrEmptyPayload = errors.New("jwt: empty payload")
 	// ErrInvalidKeyType is returned when the type of given key is wrong.
 	ErrInvalidKeyType = errors.New("jwt: invalid key")
+	// ErrInvalidSignature is returned when the given signature is invalid.
+	ErrInvalidSignature = errors.New("jwt: invalid signature")
+	// ErrInvalidHeaderType is returned when "typ" not found in header and is not
+	// "JWT".
+	ErrInvalidHeaderType = errors.New("jwt: invalid header type")
+	// ErrInvalidToken is returned when the formation of the token is not
+	// "XXX.XXX.XXX".
+	ErrInvalidToken = errors.New("jwt: invalid token")
+	// ErrInvalidAlgorithm is returned when the algorithm is not support.
+	ErrInvalidAlgorithm = errors.New("jwt: invalid algorithm")
 
 	periodBytes = []byte(".")
-	algImpMap   map[Algorithm]algImp
+	algImpMap   = map[Algorithm]algorithmImplementation{}
 )
 
-type algImp interface {
+type algorithmImplementation interface {
 	sign(content []byte, key interface{}) ([]byte, error)
+	verify(signing []byte, key interface{}) error
 }
 
 type header struct {

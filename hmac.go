@@ -31,3 +31,7 @@ func (ha hmacAlgImp) sign(content []byte, secret interface{}) ([]byte, error) {
 
 	return h.Sum(nil), nil
 }
+
+func (ha hmacAlgImp) verify(signing []byte, key interface{}) error {
+	return nil
+}

@@ -25,10 +25,7 @@ func Sign(payload map[string]interface{}, secretOrPrivateKey interface{}, opt *S
 		return nil, ErrEmptyPayload
 	}
 
-	h := header{
-		Algorithm: opt.Algorithm,
-		Typ:       "JWT",
-	}
+	h := header{Algorithm: opt.Algorithm, Typ: "JWT"}
 
 	if opt.Header != nil {
 		if err := mergo.Map(&h, opt.Header); err != nil {
