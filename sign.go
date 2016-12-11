@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"time"
 
@@ -21,7 +22,7 @@ type SignOption struct {
 }
 
 // Sign encodes the given payload and serect to the JSON web token.
-func Sign(payload map[string]interface{}, secretOrPrivateKey interface{}, opt *SignOption) ([]byte, error) {
+func Sign(payload map[string]interface{}, secretOrPrivateKey interface{}, opt *SignOption) (signed []byte, err error) {
 	if payload == nil {
 		return nil, ErrEmptyPayload
 	}
@@ -30,26 +31,34 @@ func Sign(payload map[string]interface{}, secretOrPrivateKey interface{}, opt *S
 		return nil, ErrEmptySecretOrPrivateKey
 	}
 
-	hj, err := marshalHeader(opt)
+	var hj, pj, sig []byte
 
-	if err != nil {
+	if hj, err = marshalHeader(opt); err != nil {
 		return nil, err
 	}
 
-	pj, err := marshalPayload(payload, opt)
+	hBase64 := []byte(base64.StdEncoding.EncodeToString(hj))
 
-	if err != nil {
+	if pj, err = marshalPayload(payload, opt); err != nil {
 		return nil, err
 	}
 
-	sig, err := algImpMap[opt.Algorithm].
-		sign(bytes.Join([][]byte{hj, pj}, periodBytes), secretOrPrivateKey)
+	pBase64 := []byte(base64.StdEncoding.EncodeToString(pj))
 
-	if err != nil {
+	algImp, ok := algImpMap[opt.Algorithm]
+
+	if !ok {
+		return nil, ErrInvalidAlgorithm
+	}
+
+	if sig, err = algImp.sign(bytes.Join([][]byte{hBase64, pBase64}, periodBytes),
+		secretOrPrivateKey); err != nil {
 		return nil, err
 	}
 
-	return bytes.Join([][]byte{hj, pj, sig}, periodBytes), nil
+	signed = bytes.Join([][]byte{hBase64, pBase64, sig}, periodBytes)
+
+	return
 }
 
 func marshalHeader(opt *SignOption) ([]byte, error) {

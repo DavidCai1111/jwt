@@ -17,9 +17,14 @@ type hmacAlgImp struct {
 }
 
 func (ha hmacAlgImp) sign(content []byte, secret interface{}) ([]byte, error) {
-	s, ok := secret.([]byte)
+	var s []byte
 
-	if !ok {
+	switch secret.(type) {
+	case []byte:
+		s = secret.([]byte)
+	case string:
+		s = []byte(secret.(string))
+	default:
 		return nil, ErrInvalidKeyType
 	}
 

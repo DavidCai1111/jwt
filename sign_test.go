@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"bytes"
 	"encoding/json"
 	"testing"
 	"time"
@@ -121,5 +122,25 @@ func TestSign(t *testing.T) {
 		_, err := Sign(make(map[string]interface{}), nil, nil)
 
 		assert.Equal(ErrEmptySecretOrPrivateKey, err)
+	})
+
+	t.Run("Should return with three parts", func(t *testing.T) {
+		custom := map[string]interface{}{
+			"test1k": "test1v",
+			"test2k": float64(234),
+		}
+
+		opt := &SignOption{
+			Algorithm: HS256,
+			Issuer:    "testIssuer",
+			Subject:   "tsetSubject",
+			Audience:  "testAudience",
+			ExpiresIn: time.Minute,
+		}
+
+		signed, err := Sign(custom, "test-secret", opt)
+
+		assert.Nil(err)
+		assert.Equal(3, len(bytes.Split(signed, periodBytes)))
 	})
 }
