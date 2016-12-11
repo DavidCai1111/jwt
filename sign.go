@@ -31,19 +31,19 @@ func Sign(payload map[string]interface{}, secretOrPrivateKey interface{}, opt *S
 		return nil, ErrEmptySecretOrPrivateKey
 	}
 
-	var hj, pj, sig []byte
+	var headerJSON, payloadJSON, signature []byte
 
-	if hj, err = marshalHeader(opt); err != nil {
+	if headerJSON, err = marshalHeader(opt); err != nil {
 		return nil, err
 	}
 
-	hBase64 := []byte(base64.StdEncoding.EncodeToString(hj))
+	hBase64 := []byte(base64.StdEncoding.EncodeToString(headerJSON))
 
-	if pj, err = marshalPayload(payload, opt); err != nil {
+	if payloadJSON, err = marshalPayload(payload, opt); err != nil {
 		return nil, err
 	}
 
-	pBase64 := []byte(base64.StdEncoding.EncodeToString(pj))
+	pBase64 := []byte(base64.StdEncoding.EncodeToString(payloadJSON))
 
 	algImp, ok := algImpMap[opt.Algorithm]
 
@@ -51,12 +51,14 @@ func Sign(payload map[string]interface{}, secretOrPrivateKey interface{}, opt *S
 		return nil, ErrInvalidAlgorithm
 	}
 
-	if sig, err = algImp.sign(bytes.Join([][]byte{hBase64, pBase64}, periodBytes),
-		secretOrPrivateKey); err != nil {
+	if signature, err = algImp.sign(bytes.Join([][]byte{hBase64, pBase64},
+		periodBytes), secretOrPrivateKey); err != nil {
 		return nil, err
 	}
 
-	signed = bytes.Join([][]byte{hBase64, pBase64, sig}, periodBytes)
+	sigBase64 := []byte(base64.StdEncoding.EncodeToString(signature))
+
+	signed = bytes.Join([][]byte{hBase64, pBase64, sigBase64}, periodBytes)
 
 	return
 }

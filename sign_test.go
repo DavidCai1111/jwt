@@ -138,7 +138,7 @@ func TestSign(t *testing.T) {
 			ExpiresIn: time.Minute,
 		}
 
-		signed, err := Sign(custom, "test-secret", opt)
+		signed, err := Sign(custom, "key", opt)
 
 		assert.Nil(err)
 		assert.Equal(3, len(bytes.Split(signed, periodBytes)))
