@@ -4,6 +4,7 @@ import (
 	"time"
 )
 
+// VerifyOption represents the options of Verify.
 type VerifyOption struct {
 	Algorithm        Algorithm
 	IngoreExpiration bool

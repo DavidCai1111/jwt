@@ -8,9 +8,9 @@ import (
 )
 
 func init() {
-	algImpMap[RS256] = rsaAlgImp{ch: crypto.SHA256, hh: crypto.SHA256.New()}
-	algImpMap[RS384] = rsaAlgImp{ch: crypto.SHA384, hh: crypto.SHA384.New()}
-	algImpMap[RS512] = rsaAlgImp{ch: crypto.SHA512, hh: crypto.SHA512.New()}
+	algImpMap[RS256] = rsaAlgImp{ch: crypto.SHA256}
+	algImpMap[RS384] = rsaAlgImp{ch: crypto.SHA384}
+	algImpMap[RS512] = rsaAlgImp{ch: crypto.SHA512}
 }
 
 type rsaAlgImp struct {

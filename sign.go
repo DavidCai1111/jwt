@@ -8,6 +8,7 @@ import (
 	"github.com/imdario/mergo"
 )
 
+// SignOption represents the options of Sign.
 type SignOption struct {
 	Algorithm   Algorithm
 	ExpiresIn   time.Duration
