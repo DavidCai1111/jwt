@@ -26,32 +26,17 @@ func Sign(payload map[string]interface{}, secretOrPrivateKey interface{}, opt *S
 		return nil, ErrEmptyPayload
 	}
 
-	h := header{Algorithm: opt.Algorithm, Typ: "JWT"}
-
-	if opt.Header != nil {
-		if err := mergo.Map(&h, opt.Header); err != nil {
-			return nil, err
-		}
+	if secretOrPrivateKey == nil {
+		return nil, ErrEmptySecretOrPrivateKey
 	}
 
-	hj, err := json.Marshal(h)
+	hj, err := marshalHeader(opt)
 
 	if err != nil {
 		return nil, err
 	}
 
-	rc := reservedClaims{
-		Issuer:   opt.Issuer,
-		Exp:      opt.ExpiresIn,
-		Subject:  opt.Subject,
-		Audience: opt.Audience,
-	}
-
-	if err := mergo.Map(&payload, rc); err != nil {
-		return nil, err
-	}
-
-	pj, err := json.Marshal(payload)
+	pj, err := marshalPayload(payload, opt)
 
 	if err != nil {
 		return nil, err
@@ -65,4 +50,42 @@ func Sign(payload map[string]interface{}, secretOrPrivateKey interface{}, opt *S
 	}
 
 	return bytes.Join([][]byte{hj, pj, sig}, periodBytes), nil
+}
+
+func marshalHeader(opt *SignOption) ([]byte, error) {
+	h := map[string]interface{}{
+		"alg": opt.Algorithm,
+		"typ": "JWT",
+	}
+
+	if opt.Header != nil {
+		if err := mergo.Map(&h, opt.Header); err != nil {
+			return nil, err
+		}
+	}
+
+	return json.Marshal(h)
+}
+
+func marshalPayload(payload map[string]interface{}, opt *SignOption) ([]byte, error) {
+	claims := make(map[string]interface{})
+
+	if opt.Issuer != "" {
+		claims["iss"] = opt.Issuer
+	}
+	if opt.ExpiresIn != 0 {
+		claims["exp"] = opt.ExpiresIn / 1e9
+	}
+	if opt.Subject != "" {
+		claims["sub"] = opt.Subject
+	}
+	if opt.Audience != "" {
+		claims["aud"] = opt.Audience
+	}
+
+	if err := mergo.Map(&claims, payload); err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(claims)
 }

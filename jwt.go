@@ -2,7 +2,6 @@ package jwt
 
 import (
 	"errors"
-	"time"
 )
 
 // Algorithm represents a supported hash algorithms.
@@ -26,6 +25,9 @@ const (
 var (
 	// ErrEmptyPayload is returned when the payload given to Sign is empty.
 	ErrEmptyPayload = errors.New("jwt: empty payload")
+	// ErrEmptySecretOrPrivateKey is returned when the secret or private key
+	// given is empy.
+	ErrEmptySecretOrPrivateKey = errors.New("jwt: empty secret or private key")
 	// ErrInvalidKeyType is returned when the type of given key is wrong.
 	ErrInvalidKeyType = errors.New("jwt: invalid key")
 	// ErrInvalidSignature is returned when the given signature is invalid.
@@ -46,16 +48,4 @@ var (
 type algorithmImplementation interface {
 	sign(content []byte, key interface{}) ([]byte, error)
 	verify(signing []byte, key interface{}) error
-}
-
-type header struct {
-	Algorithm Algorithm `json:"alg"`
-	Typ       string    `json:"typ"`
-}
-
-type reservedClaims struct {
-	Issuer   string        `json:"iss,omitempty"`
-	Exp      time.Duration `json:"exp,omitempty"`
-	Subject  string        `json:"sub,omitempty"`
-	Audience string        `json:"aud,omitempty"`
 }
