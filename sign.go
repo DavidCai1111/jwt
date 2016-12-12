@@ -11,20 +11,27 @@ import (
 
 // SignOption represents the options of Sign.
 type SignOption struct {
-	Algorithm   Algorithm
-	ExpiresIn   time.Duration
-	Audience    string
-	Issuer      string
-	JWTID       string
-	Subject     string
-	NoTimestamp bool
-	Header      Header
+	Algorithm Algorithm
+	ExpiresIn time.Duration
+	Audience  string
+	Issuer    string
+	Subject   string
+	// Header is the customized header which will be merged to token's header.
+	Header Header
 }
 
-// Sign encodes the given payload and serect to the JSON web token.
+// Sign signs the given payload and serect to the JSON web token,
+// when using HMAC algorithm, secretOrPrivateKey's type should be string or []
+// byte , when using RSA algorithm, secretOrPrivateKey's type should be
+// rsa.PrivateKey. If the opt given is nil, it will use the defualt HS256
+// algorithm.
 func Sign(payload Payload, secretOrPrivateKey interface{}, opt *SignOption) (token []byte, err error) {
 	if payload == nil {
 		return nil, ErrEmptyPayload
+	}
+
+	if opt == nil {
+		opt = &SignOption{}
 	}
 
 	if secretOrPrivateKey == nil {
@@ -44,6 +51,10 @@ func Sign(payload Payload, secretOrPrivateKey interface{}, opt *SignOption) (tok
 	}
 
 	pBase64 := []byte(base64.StdEncoding.EncodeToString(payloadJSON))
+
+	if opt.Algorithm == "" {
+		opt.Algorithm = HS256
+	}
 
 	algImp, ok := algImpMap[opt.Algorithm]
 

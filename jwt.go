@@ -60,7 +60,7 @@ type algorithmImplementation interface {
 	verify(signing []byte, key interface{}) (Header, Payload, error)
 }
 
-// Header represents the JWT header.
+// Header represents a JWT header.
 type Header map[string]interface{}
 
 func (h Header) hasValidType() bool {
@@ -81,7 +81,7 @@ func (h Header) hasValidType() bool {
 	return received == "JWT"
 }
 
-// Payload represents the JWT payload.
+// Payload represents a JWT payload.
 type Payload map[string]interface{}
 
 func (p Payload) checkStringClaim(key, expected string) bool {

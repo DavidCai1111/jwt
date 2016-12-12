@@ -149,6 +149,18 @@ func TestSign(t *testing.T) {
 		assert.Equal(3, len(bytes.Split(signed, periodBytes)))
 	})
 
+	t.Run("Should use HS256 when opt is nil", func(t *testing.T) {
+		custom := map[string]interface{}{
+			"test1k": "test1v",
+			"test2k": float64(234),
+		}
+
+		signed, err := Sign(custom, "key", nil)
+
+		assert.Nil(err)
+		assert.Equal(3, len(bytes.Split(signed, periodBytes)))
+	})
+
 	t.Run("Should return with three parts and using RSA", func(t *testing.T) {
 		custom := map[string]interface{}{
 			"test1k": "test1v",

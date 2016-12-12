@@ -6,20 +6,37 @@ import (
 
 // VerifyOption represents the options of Verify.
 type VerifyOption struct {
-	Algorithm        Algorithm
+	Algorithm Algorithm
+	Issuer    string
+	Audience  string
+	Subject   string
+	// IngoreExpiration specifies whether to validate the
+	// expiration of the token.
 	IngoreExpiration bool
-	Issuer           string
-	Audience         string
-	Subject          string
-	clockTolerance   time.Duration
+	// clockTolerance specifies the time duration to tolerate when
+	// checking the expiration of the token.
+	clockTolerance time.Duration
 }
 
-// Verify decodes the given token and check whether the token is valid.
+// Verify will return the decoded header and payload if the signature,
+// optional expiration, audience, issuer and subject are valid.
+// When using HMAC algorithm, secretOrPrivateKey's type should be string or []
+// byte , when using RSA algorithm, secretOrPrivateKey's type should be
+// rsa.PrivateKey. If the opt given is nil, it will use the defualt HS256
+// algorithm.
 func Verify(token []byte, secretOrPrivateKey interface{}, opt *VerifyOption) (header Header, payload Payload, err error) {
 	var (
 		ok bool
 		ai algorithmImplementation
 	)
+
+	if opt == nil {
+		opt = &VerifyOption{}
+	}
+
+	if opt.Algorithm == "" {
+		opt.Algorithm = HS256
+	}
 
 	if ai, ok = algImpMap[opt.Algorithm]; !ok {
 		return nil, nil, ErrInvalidAlgorithm
