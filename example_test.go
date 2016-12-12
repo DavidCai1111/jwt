@@ -47,8 +47,9 @@ func ExampleVerify() {
 		Issuer: "fooIss",
 	})
 
-	// Verify subject
+	// Verify subject and expiration
 	header, payload, err = jwt.Verify(token, "secret", &jwt.VerifyOption{
-		Subject: "fooSub",
+		Subject:        "fooSub",
+		ClockTolerance: 15 * time.Second,
 	})
 }

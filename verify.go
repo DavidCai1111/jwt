@@ -13,9 +13,9 @@ type VerifyOption struct {
 	// IngoreExpiration specifies whether to validate the
 	// expiration of the token.
 	IngoreExpiration bool
-	// clockTolerance specifies the time duration to tolerate when
+	// ClockTolerance specifies the time duration to tolerate when
 	// checking the expiration of the token.
-	clockTolerance time.Duration
+	ClockTolerance time.Duration
 }
 
 // Verify will return the decoded header and payload if the signature,
@@ -57,7 +57,7 @@ func Verify(token []byte, secretOrPrivateKey interface{}, opt *VerifyOption) (he
 	}
 
 	if !opt.IngoreExpiration {
-		if ok := payload.checkExpiration(opt.clockTolerance); !ok {
+		if ok := payload.checkExpiration(opt.ClockTolerance); !ok {
 			return nil, nil, ErrTokenExpired
 		}
 	}
