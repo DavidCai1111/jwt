@@ -33,10 +33,6 @@ func Verify(token []byte, secretOrPrivateKey interface{}, opt *VerifyOption) (he
 		return nil, nil, ErrInvalidHeaderType
 	}
 
-	if !header.hasAlgorithm(opt.Algorithm) {
-		return nil, nil, ErrInvalidAlgorithm
-	}
-
 	if !payload.checkStringClaim("aud", opt.Audience) ||
 		!payload.checkStringClaim("iss", opt.Issuer) ||
 		!payload.checkStringClaim("sub", opt.Subject) {

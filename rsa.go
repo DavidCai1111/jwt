@@ -5,6 +5,7 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/base64"
 )
 
 func init() {
@@ -36,7 +37,12 @@ func (ra rsaAlgImp) verify(token []byte, privateKey interface{}) (header Header,
 		return
 	}
 
-	signatureReceive := bytes.Split(token, periodBytes)[2]
+	signatureReceive, err := base64.StdEncoding.DecodeString(string(bytes.Split(token, periodBytes)[2]))
+
+	if err != nil {
+		return
+	}
+
 	signatureExpect, err := ra.sign(token[0:bytes.LastIndexByte(token, '.')], privateKey)
 
 	if err != nil {

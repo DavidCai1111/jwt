@@ -1,7 +1,9 @@
 package jwt
 
-import "errors"
-import "time"
+import (
+	"errors"
+	"time"
+)
 
 // Algorithm represents a supported hash algorithms.
 type Algorithm string
@@ -44,7 +46,9 @@ var (
 	ErrInvalidReservedClaim = errors.New("jwt: invalid reserved claim")
 	// ErrPayloadMissingIat is returned when the payload is missing "iat".
 	ErrPayloadMissingIat = errors.New("jwt: payload missing iat")
-	// ErrExpired is returned when the token is expired.
+	// ErrPayloadMissingExp is returned when the payload is missing "exp".
+	ErrPayloadMissingExp = errors.New("jwt: payload missing exp")
+	// ErrTokenExpired is returned when the token is expired.
 	ErrTokenExpired = errors.New("jwt: token expired")
 
 	periodBytes = []byte(".")
@@ -75,24 +79,6 @@ func (h Header) hasValidType() bool {
 	}
 
 	return received == "JWT"
-}
-
-func (h Header) hasAlgorithm(expected Algorithm) bool {
-	var (
-		alg      interface{}
-		received Algorithm
-		ok       bool
-	)
-
-	if alg, ok = h["alg"]; !ok {
-		return false
-	}
-
-	if received, ok = alg.(Algorithm); !ok {
-		return false
-	}
-
-	return expected == received
 }
 
 // Payload represents the JWT payload.
@@ -138,12 +124,33 @@ func (p Payload) iat() (t time.Time, err error) {
 	return time.Unix(int64(iat), 0), nil
 }
 
-func (p Payload) checkExpiration(tolerance time.Duration) bool {
-	iat, err := p.iat()
+func (p Payload) expTime() (t time.Time, err error) {
+	var (
+		exp float64
+		iat time.Time
+		ok  bool
+		v   interface{}
+	)
 
-	if err != nil {
-		return false
+	if v, ok = p["exp"]; !ok {
+		return t, ErrPayloadMissingExp
 	}
 
-	return time.Now().Add(tolerance).After(iat)
+	if exp, ok = v.(float64); !ok {
+		return t, ErrPayloadMissingExp
+	}
+
+	if iat, err = p.iat(); err != nil {
+		return
+	}
+
+	return iat.Add(time.Duration(int64(exp * 1e9))), nil
+}
+
+func (p Payload) checkExpiration(tolerance time.Duration) bool {
+	if exp, err := p.expTime(); err == nil {
+		return time.Now().Add(tolerance).Before(exp)
+	}
+
+	return false
 }

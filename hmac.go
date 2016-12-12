@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto"
 	"crypto/hmac"
+	"encoding/base64"
 	"hash"
 )
 
@@ -41,7 +42,12 @@ func (ha hmacAlgImp) verify(token []byte, secret interface{}) (header Header, pa
 		return
 	}
 
-	signatureReceive := bytes.Split(token, periodBytes)[2]
+	signatureReceive, err := base64.StdEncoding.DecodeString(string(bytes.Split(token, periodBytes)[2]))
+
+	if err != nil {
+		return
+	}
+
 	signatureExpect, err := ha.sign(token[0:bytes.LastIndexByte(token, '.')], secret)
 
 	if err != nil {
