@@ -36,7 +36,7 @@ func TestDecode(t *testing.T) {
 
 		assert.Nil(err)
 		assert.Equal(2, len(header))
-		assert.Equal(6, len(payload))
+		assert.Equal(7, len(payload))
 		assert.Equal(string(HS256), header["alg"])
 		assert.Equal("JWT", header["typ"])
 		assert.Equal(opt.Subject, payload["sub"])
@@ -45,5 +45,8 @@ func TestDecode(t *testing.T) {
 		assert.Equal(float64(60), payload["exp"])
 		assert.Equal(custom["test1k"], payload["test1k"])
 		assert.Equal(custom["test2k"], payload["test2k"])
+		iat, ok := payload["iat"].(float64)
+		assert.True(ok)
+		assert.True(time.Now().After(time.Unix(int64(iat), 0)))
 	})
 }

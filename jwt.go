@@ -1,8 +1,7 @@
 package jwt
 
-import (
-	"errors"
-)
+import "errors"
+import "time"
 
 // Algorithm represents a supported hash algorithms.
 type Algorithm string
@@ -40,6 +39,13 @@ var (
 	ErrInvalidToken = errors.New("jwt: invalid token")
 	// ErrInvalidAlgorithm is returned when the algorithm is not support.
 	ErrInvalidAlgorithm = errors.New("jwt: invalid algorithm")
+	// ErrInvalidReservedClaim is returned when the reserved claim dose not match
+	// with the given value in VerifyOption.
+	ErrInvalidReservedClaim = errors.New("jwt: invalid reserved claim")
+	// ErrPayloadMissingIat is returned when the payload is missing "iat".
+	ErrPayloadMissingIat = errors.New("jwt: payload missing iat")
+	// ErrExpired is returned when the token is expired.
+	ErrTokenExpired = errors.New("jwt: token expired")
 
 	periodBytes = []byte(".")
 	algImpMap   = map[Algorithm]algorithmImplementation{}
@@ -47,5 +53,97 @@ var (
 
 type algorithmImplementation interface {
 	sign(content []byte, key interface{}) ([]byte, error)
-	verify(signing []byte, key interface{}) error
+	verify(signing []byte, key interface{}) (Header, Payload, error)
+}
+
+// Header represents the JWT header.
+type Header map[string]interface{}
+
+func (h Header) hasValidType() bool {
+	var (
+		typ      interface{}
+		received string
+		ok       bool
+	)
+
+	if typ, ok = h["typ"]; !ok {
+		return false
+	}
+
+	if received, ok = typ.(string); !ok {
+		return false
+	}
+
+	return received == "JWT"
+}
+
+func (h Header) hasAlgorithm(expected Algorithm) bool {
+	var (
+		alg      interface{}
+		received Algorithm
+		ok       bool
+	)
+
+	if alg, ok = h["alg"]; !ok {
+		return false
+	}
+
+	if received, ok = alg.(Algorithm); !ok {
+		return false
+	}
+
+	return expected == received
+}
+
+// Payload represents the JWT payload.
+type Payload map[string]interface{}
+
+func (p Payload) checkStringClaim(key, expected string) bool {
+	if expected == "" {
+		return true
+	}
+
+	var (
+		received string
+		v        interface{}
+		ok       bool
+	)
+
+	if v, ok = p[key]; !ok {
+		return false
+	}
+
+	if received, ok = v.(string); !ok {
+		return false
+	}
+
+	return expected == received
+}
+
+func (p Payload) iat() (t time.Time, err error) {
+	var (
+		iat float64
+		ok  bool
+		v   interface{}
+	)
+
+	if v, ok = p["iat"]; !ok {
+		return t, ErrPayloadMissingIat
+	}
+
+	if iat, ok = v.(float64); !ok {
+		return t, ErrPayloadMissingIat
+	}
+
+	return time.Unix(int64(iat), 0), nil
+}
+
+func (p Payload) checkExpiration(tolerance time.Duration) bool {
+	iat, err := p.iat()
+
+	if err != nil {
+		return false
+	}
+
+	return time.Now().Add(tolerance).After(iat)
 }

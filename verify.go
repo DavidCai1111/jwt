@@ -8,45 +8,46 @@ import (
 type VerifyOption struct {
 	Algorithm        Algorithm
 	IngoreExpiration bool
+	Issuer           string
 	Audience         string
 	Subject          string
 	clockTolerance   time.Duration
 }
 
 // Verify decodes the given token and check whether the token is valid.
-func Verify(token []byte, secretOrPrivateKey interface{}, opt *VerifyOption) (map[string]interface{}, map[string]interface{}, error) {
-	header, payload, err := decode(token)
-
-	if err != nil {
-		return nil, nil, err
-	}
-
+func Verify(token []byte, secretOrPrivateKey interface{}, opt *VerifyOption) (header Header, payload Payload, err error) {
 	var (
-		ok     bool
-		typ    interface{}
-		typStr string
-		algImp algorithmImplementation
+		ok bool
+		ai algorithmImplementation
 	)
 
-	if err := algImp.verify(token, secretOrPrivateKey); err != nil {
-		return nil, nil, ErrInvalidSignature
-	}
-
-	if typ, ok = header["typ"]; !ok {
-		return nil, nil, ErrInvalidHeaderType
-	}
-
-	if typStr, ok = typ.(string); !ok {
-		return nil, nil, ErrInvalidHeaderType
-	}
-
-	if typStr != "JWT" {
-		return nil, nil, ErrInvalidHeaderType
-	}
-
-	if algImp, ok = algImpMap[opt.Algorithm]; !ok {
+	if ai, ok = algImpMap[opt.Algorithm]; !ok {
 		return nil, nil, ErrInvalidAlgorithm
 	}
 
-	return header, payload, nil
+	if header, payload, err = ai.verify(token, secretOrPrivateKey); err != nil {
+		return nil, nil, ErrInvalidSignature
+	}
+
+	if !header.hasValidType() {
+		return nil, nil, ErrInvalidHeaderType
+	}
+
+	if !header.hasAlgorithm(opt.Algorithm) {
+		return nil, nil, ErrInvalidAlgorithm
+	}
+
+	if !payload.checkStringClaim("aud", opt.Audience) ||
+		!payload.checkStringClaim("iss", opt.Issuer) ||
+		!payload.checkStringClaim("sub", opt.Subject) {
+		return nil, nil, ErrInvalidReservedClaim
+	}
+
+	if !opt.IngoreExpiration {
+		if ok := payload.checkExpiration(opt.clockTolerance); !ok {
+			return nil, nil, ErrTokenExpired
+		}
+	}
+
+	return
 }

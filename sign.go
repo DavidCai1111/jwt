@@ -18,11 +18,11 @@ type SignOption struct {
 	JWTID       string
 	Subject     string
 	NoTimestamp bool
-	Header      map[string]interface{}
+	Header      Header
 }
 
 // Sign encodes the given payload and serect to the JSON web token.
-func Sign(payload map[string]interface{}, secretOrPrivateKey interface{}, opt *SignOption) (signed []byte, err error) {
+func Sign(payload Payload, secretOrPrivateKey interface{}, opt *SignOption) (token []byte, err error) {
 	if payload == nil {
 		return nil, ErrEmptyPayload
 	}
@@ -34,13 +34,13 @@ func Sign(payload map[string]interface{}, secretOrPrivateKey interface{}, opt *S
 	var headerJSON, payloadJSON, signature []byte
 
 	if headerJSON, err = marshalHeader(opt); err != nil {
-		return nil, err
+		return
 	}
 
 	hBase64 := []byte(base64.StdEncoding.EncodeToString(headerJSON))
 
 	if payloadJSON, err = marshalPayload(payload, opt); err != nil {
-		return nil, err
+		return
 	}
 
 	pBase64 := []byte(base64.StdEncoding.EncodeToString(payloadJSON))
@@ -53,14 +53,12 @@ func Sign(payload map[string]interface{}, secretOrPrivateKey interface{}, opt *S
 
 	if signature, err = algImp.sign(bytes.Join([][]byte{hBase64, pBase64},
 		periodBytes), secretOrPrivateKey); err != nil {
-		return nil, err
+		return
 	}
 
 	sigBase64 := []byte(base64.StdEncoding.EncodeToString(signature))
 
-	signed = bytes.Join([][]byte{hBase64, pBase64, sigBase64}, periodBytes)
-
-	return
+	return bytes.Join([][]byte{hBase64, pBase64, sigBase64}, periodBytes), nil
 }
 
 func marshalHeader(opt *SignOption) ([]byte, error) {
@@ -78,8 +76,8 @@ func marshalHeader(opt *SignOption) ([]byte, error) {
 	return json.Marshal(h)
 }
 
-func marshalPayload(payload map[string]interface{}, opt *SignOption) ([]byte, error) {
-	claims := make(map[string]interface{})
+func marshalPayload(payload Payload, opt *SignOption) ([]byte, error) {
+	claims := Payload{"iat": time.Now().Unix()}
 
 	if opt.Issuer != "" {
 		claims["iss"] = opt.Issuer

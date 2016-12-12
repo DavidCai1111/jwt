@@ -62,7 +62,7 @@ func TestMarshalPayload(t *testing.T) {
 		err = json.Unmarshal(j, &unmarshaled)
 
 		assert.Nil(err)
-		assert.Zero(len(unmarshaled))
+		assert.Equal(1, len(unmarshaled))
 	})
 
 	t.Run("Should gen json with right default values", func(t *testing.T) {
@@ -80,7 +80,10 @@ func TestMarshalPayload(t *testing.T) {
 		err = json.Unmarshal(j, &unmarshaled)
 
 		assert.Nil(err)
-		assert.Equal(4, len(unmarshaled))
+		assert.Equal(5, len(unmarshaled))
+		iat, ok := unmarshaled["iat"].(float64)
+		assert.True(ok)
+		assert.True(time.Now().After(time.Unix(int64(iat), 0)))
 		assert.Equal(opt.Issuer, unmarshaled["iss"])
 		assert.Equal(opt.Subject, unmarshaled["sub"])
 		assert.Equal(opt.Audience, unmarshaled["aud"])
@@ -105,7 +108,7 @@ func TestMarshalPayload(t *testing.T) {
 		err = json.Unmarshal(j, &unmarshaled)
 
 		assert.Nil(err)
-		assert.Equal(6, len(unmarshaled))
+		assert.Equal(7, len(unmarshaled))
 		assert.Equal(custom["test1k"], unmarshaled["test1k"])
 		assert.Equal(custom["test2k"], unmarshaled["test2k"])
 	})

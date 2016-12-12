@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"bytes"
 	"crypto"
 	"crypto/hmac"
 	"hash"
@@ -35,6 +36,23 @@ func (ha hmacAlgImp) sign(content []byte, secret interface{}) ([]byte, error) {
 	return h.Sum(nil), nil
 }
 
-func (ha hmacAlgImp) verify(signing []byte, secret interface{}) error {
-	return nil
+func (ha hmacAlgImp) verify(token []byte, secret interface{}) (header Header, payload Payload, err error) {
+	if header, payload, err = decode(token); err != nil {
+		return
+	}
+
+	signatureReceive := bytes.Split(token, periodBytes)[2]
+	signatureExpect, err := ha.sign(token[0:bytes.LastIndexByte(token, '.')], secret)
+
+	if err != nil {
+		return
+	}
+
+	ok := hmac.Equal(signatureExpect, signatureReceive)
+
+	if !ok {
+		return nil, nil, ErrInvalidSignature
+	}
+
+	return
 }
