@@ -30,13 +30,11 @@ func (ha hmacAlgImp) sign(content []byte, secret interface{}) ([]byte, error) {
 
 	h := hmac.New(ha.hashFunc, s)
 
-	if _, err := h.Write(content); err != nil {
-		return nil, err
-	}
+	h.Write(content)
 
 	return h.Sum(nil), nil
 }
 
-func (ha hmacAlgImp) verify(signing []byte, key interface{}) error {
+func (ha hmacAlgImp) verify(signing []byte, secret interface{}) error {
 	return nil
 }

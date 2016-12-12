@@ -4,28 +4,30 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
-	"hash"
 )
 
 func init() {
-	algImpMap[RS256] = rsaAlgImp{ch: crypto.SHA256}
-	algImpMap[RS384] = rsaAlgImp{ch: crypto.SHA384}
-	algImpMap[RS512] = rsaAlgImp{ch: crypto.SHA512}
+	algImpMap[RS256] = rsaAlgImp{hash: crypto.SHA256}
+	algImpMap[RS384] = rsaAlgImp{hash: crypto.SHA384}
+	algImpMap[RS512] = rsaAlgImp{hash: crypto.SHA512}
 }
 
 type rsaAlgImp struct {
-	ch crypto.Hash
-	hh hash.Hash
+	hash crypto.Hash
 }
 
 func (ra rsaAlgImp) sign(content []byte, privateKey interface{}) ([]byte, error) {
-	pk, ok := privateKey.(*rsa.PrivateKey)
+	key, ok := privateKey.(*rsa.PrivateKey)
 
 	if !ok {
 		return nil, ErrInvalidKeyType
 	}
 
-	return rsa.SignPKCS1v15(rand.Reader, pk, ra.ch, ra.hh.Sum(content))
+	h := ra.hash.New()
+
+	h.Write(content)
+
+	return rsa.SignPKCS1v15(rand.Reader, key, ra.hash, h.Sum(nil))
 }
 
 func (ra rsaAlgImp) verify(signing []byte, key interface{}) error {

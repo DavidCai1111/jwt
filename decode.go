@@ -1,37 +1,39 @@
 package jwt
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"strings"
 )
 
-func decode(token string) (dh map[string]interface{}, dp map[string]interface{}, err error) {
-	splited := strings.Split(token, ".")
+func decode(token []byte) (header map[string]interface{}, payload map[string]interface{}, err error) {
+	segments := bytes.Split(token, periodBytes)
 
-	if len(splited) != 3 {
+	if len(segments) != 3 {
 		return nil, nil, ErrInvalidToken
 	}
 
-	h, err := base64.StdEncoding.DecodeString(splited[0])
+	if header, err = decodeSegment(segments[0]); err != nil {
+		return nil, nil, err
+	}
+
+	if payload, err = decodeSegment(segments[1]); err != nil {
+		return nil, nil, err
+	}
+
+	return header, payload, nil
+}
+
+func decodeSegment(segment []byte) (m map[string]interface{}, err error) {
+	s, err := base64.StdEncoding.DecodeString(string(segment))
 
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	if err := json.Unmarshal(h, dh); err != nil {
-		return nil, nil, err
+	if err := json.Unmarshal(s, &m); err != nil {
+		return nil, err
 	}
 
-	p, err := base64.StdEncoding.DecodeString(splited[1])
-
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if err := json.Unmarshal(p, dp); err != nil {
-		return nil, nil, err
-	}
-
-	return dh, dp, nil
+	return
 }

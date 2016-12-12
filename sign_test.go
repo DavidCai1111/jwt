@@ -2,6 +2,8 @@ package jwt
 
 import (
 	"bytes"
+	"crypto/rand"
+	"crypto/rsa"
 	"encoding/json"
 	"testing"
 	"time"
@@ -124,7 +126,7 @@ func TestSign(t *testing.T) {
 		assert.Equal(ErrEmptySecretOrPrivateKey, err)
 	})
 
-	t.Run("Should return with three parts", func(t *testing.T) {
+	t.Run("Should return with three parts and using HMAC", func(t *testing.T) {
 		custom := map[string]interface{}{
 			"test1k": "test1v",
 			"test2k": float64(234),
@@ -139,6 +141,30 @@ func TestSign(t *testing.T) {
 		}
 
 		signed, err := Sign(custom, "key", opt)
+
+		assert.Nil(err)
+		assert.Equal(3, len(bytes.Split(signed, periodBytes)))
+	})
+
+	t.Run("Should return with three parts and using RSA", func(t *testing.T) {
+		custom := map[string]interface{}{
+			"test1k": "test1v",
+			"test2k": float64(234),
+		}
+
+		opt := &SignOption{
+			Algorithm: RS256,
+			Issuer:    "testIssuer",
+			Subject:   "tsetSubject",
+			Audience:  "testAudience",
+			ExpiresIn: time.Minute,
+		}
+
+		key, err := rsa.GenerateKey(rand.Reader, 1024)
+
+		assert.Nil(err)
+
+		signed, err := Sign(custom, key, opt)
 
 		assert.Nil(err)
 		assert.Equal(3, len(bytes.Split(signed, periodBytes)))

@@ -15,7 +15,7 @@ type VerifyOption struct {
 
 // Verify decodes the given token and check whether the token is valid.
 func Verify(token []byte, secretOrPrivateKey interface{}, opt *VerifyOption) (map[string]interface{}, map[string]interface{}, error) {
-	header, payload, err := decode(string(token))
+	header, payload, err := decode(token)
 
 	if err != nil {
 		return nil, nil, err
@@ -27,6 +27,10 @@ func Verify(token []byte, secretOrPrivateKey interface{}, opt *VerifyOption) (ma
 		typStr string
 		algImp algorithmImplementation
 	)
+
+	if err := algImp.verify(token, secretOrPrivateKey); err != nil {
+		return nil, nil, ErrInvalidSignature
+	}
 
 	if typ, ok = header["typ"]; !ok {
 		return nil, nil, ErrInvalidHeaderType
@@ -42,10 +46,6 @@ func Verify(token []byte, secretOrPrivateKey interface{}, opt *VerifyOption) (ma
 
 	if algImp, ok = algImpMap[opt.Algorithm]; !ok {
 		return nil, nil, ErrInvalidAlgorithm
-	}
-
-	if err := algImp.verify(token, secretOrPrivateKey); err != nil {
-		return nil, nil, err
 	}
 
 	return header, payload, nil
