@@ -49,4 +49,10 @@ func TestDecode(t *testing.T) {
 		assert.True(ok)
 		assert.True(time.Now().After(time.Unix(int64(iat), 0)))
 	})
+
+	t.Run("Should return error when decodeSegment with not valid json", func(t *testing.T) {
+		_, err := decodeSegment(nil)
+
+		assert.NotNil(err)
+	})
 }
